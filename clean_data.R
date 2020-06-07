@@ -15,7 +15,7 @@ cricket_cleaned <- cricket_data %>%
                               Malawi = "MLW",
                               Uganda = "UGA",
                               Nepal = "NEP",
-                              Mozabique = "MOZ",
+                              Mozambique = "MOZ",
                               Botswana = "BOT",
                               Vanuatu = "VAN",
                               Brazil = "BRA",
@@ -47,5 +47,13 @@ cricket_cleaned <- cricket_data %>%
                               Mali = "MLI",
                               Guernsey = "GUN",
                               Maldives = "MDV",
-                              Samoa = "South AfricaMwn"))
+                              Samoa = "South AfricaMwn"),
+         country = fct_explicit_na(country,                   # Remaining missing values are from the Qatar national team
+                                   na_level = "Qatar"),
+         region = case_when(country %in% c("Argentina", "Belize", "Brazil", "Canada", "Chile", "Costa Rica", "Mexico", "Peru", "United States of America", "West Indies") ~ "Americas",
+                            country %in% c("South Africa", "Zimbabwe", "Namibia", "Botswana", "Kenya", "Malawi", "Mali", "Mozambique", "Nigeria", "Rwanda", "Sierra Leone", "Tanzania", "Uganda") ~ "Africa",
+                            country %in% c("India", "Pakistan", "Sri Lanka", "Hong Kong", "Bangladesh", "Bhutan", "China", "Kuwait", "Malaysia", "Maldives", "Myanmar", "Nepal", "Oman", "Qatar", "Singapore", "Thailand", "United Arab Emirates") ~ "Asia",
+                            country %in% c("Australia", "New Zealand", "Papau New Guinea", "Fiji", "Indonesia", "Japan", "Philippines", "Samoa", "Korea", "Vanuatu") ~ "East Asia - Pacific",
+                            country %in% c("England", "Ireland", "Scotland", "Netherlands", "France", "Jersey", "Germany", "Austria", "Norway", "Guernsey") ~ "Europe")) %>% 
+  select(player, country, region, everything())
 
