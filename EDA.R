@@ -1,5 +1,6 @@
 library(tidyverse)
 library(patchwork)
+library(maps)
 source("clean_data.R")
 
 country_data <- cricket_cleaned %>% 
@@ -15,7 +16,7 @@ country_data <- cricket_cleaned %>%
             team_strike_rate = mean(strike_rate[is.finite(strike_rate)]))
 
 
-### We would expect players with more experience would perform better. Does the evidence bear this out?
+### We would expect players with more experience to perform better. Does the evidence bear this out?
 ### Hypothesis: 
 
 by_years_active <- cricket_cleaned %>% 
@@ -85,13 +86,6 @@ cricket_cleaned %>%
   summarise_all(mean) %>% 
   select(under_7, usage_rate, matches, overs, maidens, runs, wickets)
 
-cricket_cleaned %>% 
-  na.omit() %>% 
-  filter(is.finite(strike_rate)) %>% 
-  ggplot(aes(x = usage_rate, y = strike_rate)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = F) +
-  theme_bw()
 
 
 
@@ -143,6 +137,13 @@ left_join(world_map, youth_country_data, by = c("region" = "country")) %>% View(
        title = "Economy by country")
   
 ### Scratch Paper
+cricket_cleaned %>% 
+  na.omit() %>% 
+  filter(is.finite(strike_rate)) %>% 
+  ggplot(aes(x = usage_rate, y = strike_rate)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  theme_bw()
 
 ggplot((country_data %>% filter(team_avg < 100))) +
   geom_point(aes(x = initial_year, y = team_strike_rate)) +
