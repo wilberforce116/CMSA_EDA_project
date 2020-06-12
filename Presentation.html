@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Visualizing Cricket Data in R</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Caleb Peña and Sahana Rayan" />
+    <meta name="date" content="2020-06-12" />
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Visualizing Cricket Data in R
+### Caleb Peña and Sahana Rayan
+### June 12, 2020
+
+---
+
+## Basic Gameplay
+
+- Team Sport with 2 teams and 11 players each
+
+--
+
+- 1 team bats in an innings and the opposing team bowls and fields
+
+--
+
+- __Goal of batting__ : more runs without getting out
+- __Goal of bowling__ : less runs and more wickets
+
+--
+
+- The team with the most runs wins
+
+.pull-right[
+.center[![](https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Muralitharan_bowling_to_Adam_Gilchrist.jpg/1599px-Muralitharan_bowling_to_Adam_Gilchrist.jpg)]
+]
+
+---
+
+##T20 Cricket
+- 1 Over = 6 balls
+
+--
+
+- The number of overs in an innings depends on the type of cricket played
+
+--
+
+- In T20, there are upto 20 overs per innings and an innings for each team to bat in
+
+---
+
+## Overview of the data
+### Where it comes from
+
+--
+
+- Scraped from [ESPN cricinfo](https://www.espncricinfo.com) using the [cricketdata](https://docs.ropensci.org/cricketdata/) package.
+
+--
+
+- The dataset contains the career numbers of all active players during the 2019 and 2020 Women's International T20 season (n = 989).
+
+--
+
+  - The vast majority (just under 86%) of the players in the data have 3 or fewer years of international experience. But the remaining players are true veterans of the game, with a mean of 9.2 years of experience.
+  
+--
+
+  - This can make the dataset challenging to work with.
+
+---
+## Overview of the data
+### The variables
+
+--
+
+- player - player name
+- country - player nationality
+- start - players first season
+- end - players most recent season. All players last played in either 2019 or 2020
+- matches - matches played
+- innings - total innings bowled
+- overs - the number of overs bowled. An over consists of six consecutive balls bowled
+- maidens - the number of maiden overs, which is an over in which the bowler conceded zero runs
+- runs - the number of runs conceded
+- wickets - the number of wickets taken
+- __ average - the average number of runs conceded per wicket taken__
+- __ economy - the average number of runs conceded per over__
+- __ strike_rate - the average number of balls bowled per wicket taken.__
+
+---
+## Overview of the data
+### Cleaning the data
+
+--
+
+1) Fixed parsing errors
+- Example: SLE -&gt; "Sierra Leone" instead of SLE -&gt; "Sri LankaE"
+
+--
+
+2) Removed player with caps for multiple countries
+
+--
+
+3) Created three new variables
+
+- maiden_ratio - the proportions of overs that are maiden overs
+- usage_rate - overs bowled per innings
+- career_length - players most recent year minus their debut year plus one.
+
+---
+## Exploring the data
+
+- For T20 matches, an economy under seven is generally considered [good.](https://web.archive.org/web/20150906074338/http://cricket.about.com/od/glossary/fl/Economy-rate.htm).
+
+--
+
+- __Hypothesis__: Having an economy rate below seven is a good indicator of bowling talent.
+
+--
+
+.center[![](Presentation_files/ECDF.png)]
+
+--
+
+
+```
+##        0%       25%       50%       75%      100% 
+##  0.000000  4.640096  5.673980  7.000000 26.000000
+```
+
+---
+## Exploring the data
+
+- We would expect players with more experience to perform better. Does the evidence bear this out?
+
+--
+
+- __Hypothesis:__ Players with more experience in T20 cricket will show more bowling success
+
+--
+
+.center[![](Presentation_files/years_active.png)]
+
+
+---
+## Exploring the data
+
+- Countries in the Indian subcontinent are very competitive when it comes to cricket.
+
+--
+
+- __Hypothesis:__ Sri Lanka has the most bowling potential in region.
+
+--
+
+- To test this hypothesis, we decided to compare the following 4 countries:
+  - India
+  - Pakistan
+  - Bangladesh
+  - Sri Lanka
+
+---
+## Exploring the data
+
+- We computed the mean value of the following statistics for players from each country: Bowling Average, Strike Rate, Maiden Ratio, and Economy Rate. Based on this visualization, we have evidence to reject the hypothesis.
+
+
+
+&lt;img src="Presentation_files/figure-html/unnamed-chunk-2-1.png" width="55%" style="display: block; margin: auto;" /&gt;
+
+---
+## Clustering
+
+- We grouped the data set by country and computed the group mean for innings, overs, career length, runs, wickets, and maidens.
+
+--
+
+- We scaled the variables and performed hierarchial clustering using complete linkage.
+
+--
+
+&lt;img src="Presentation_files/figure-html/unnamed-chunk-3-1.png" width="52%" style="display: block; margin: auto;" /&gt;
+
+---
+##Clustering
+- The scatterplot below shows the clusters more clearly
+&lt;img src="Presentation_files/figure-html/unnamed-chunk-4-1.png" width="70%" height="70%" style="display: block; margin: auto;" /&gt;
+
+---
+
+- It appears to be clustered primarily based on average career lengths
+
+--
+
+- This summary table also highlights these large difference in average values between the clusters
+
+
+```r
+cricket_by_country %&gt;%
+  mutate(cluster = cutree(clust_by_country, 3)) %&gt;% 
+  select(-c("country")) %&gt;%
+  group_by(cluster) %&gt;% 
+  mutate(num = n(),
+         avg = avg_runs/avg_wickets,
+         economy = avg_runs/avg_overs,
+         strike_rate = (avg_overs*6)/avg_wickets) %&gt;% 
+  summarise_all(mean) %&gt;% 
+  select(num, avg, economy, strike_rate)
+```
+
+```
+## # A tibble: 3 x 4
+##     num   avg economy strike_rate
+##   &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;       &lt;dbl&gt;
+## 1    47  34.8    5.75        28.5
+## 2     7  19.6    5.91        19.9
+## 3     4  20.9    5.54        22.1
+```
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

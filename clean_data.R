@@ -7,7 +7,7 @@ cricket_data <- read_csv("http://www.stat.cmu.edu/cmsac/sure/materials/data/eda_
 cricket_cleaned <- cricket_data %>% 
   filter(player != "CR Seneviratna (SL-W/UAE-W)") %>%           # Remove player who has caps for more than one nation (Sahana, thoughts on what to do with this observation?)
   select(-"X1") %>% 
-  mutate(player = gsub(' \\(\\)$', '', cricket_cleaned$player), # Remove trailing parentheses
+  mutate(player = gsub(' \\(\\)$', '', player), # Remove trailing parentheses
          country = fct_recode(country,                          # Replace country abbreviations
                               Thailand = "THI",
                               Indonesia = "INA",
@@ -58,6 +58,6 @@ cricket_cleaned <- cricket_data %>%
                             country %in% c("Australia", "New Zealand", "Papau New Guinea", "Fiji", "Indonesia", "Japan", "Philippines", "Samoa", "Korea", "Vanuatu") ~ "East Asia - Pacific",
                             country %in% c("England", "Ireland", "Scotland", "Netherlands", "France", "Jersey", "Germany", "Austria", "Norway", "Guernsey") ~ "Europe"),
          maiden_ratio = maidens/overs,
-         usage_rate = overs/innings) %>% 
+         usage_rate = overs/innings,
+         years_active = end - start + 1) %>% 
   select(player, country, region, everything())
-
